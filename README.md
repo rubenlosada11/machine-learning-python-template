@@ -1,4 +1,74 @@
-# Data Science Project Boilerplate
+# WeLoveReviews — Análisis de sentimiento en reseñas de clientes
+
+Clasifica las 500 reseñas escritas de **Harbor House Café** como positivas, neutrales o negativas con un modelo preentrenado de Hugging Face y comprueba si el tono del texto es coherente con su valoración media de **4,5 / 5 estrellas**. No se entrena ningún modelo.
+
+**Resultado principal:** 82,4 % positivas · 8,2 % neutrales · 9,4 % negativas. El texto respalda la valoración de 4,5, pero el porcentaje de negativas está sobreestimado: 14 de las 16 reseñas de 4–5 ★ que el modelo marca como negativas son elogios mal clasificados. El análisis completo está en [`src/explore.ipynb`](src/explore.ipynb).
+
+## Estructura relevante
+
+| Ruta | Contenido |
+|---|---|
+| `src/explore.ipynb` | **Documento principal**: EDA, plan, inferencia, resultados, falsos negativos, validación manual, conclusiones y addendum con un segundo modelo. Se entrega ejecutado. |
+| `src/app.py` | Script de producción: lee el CSV, clasifica todas las reseñas y escribe el CSV enriquecido. |
+| `tests/test_app.py` | Tests unitarios de `app.py` con un modelo simulado (no descargan nada). |
+| `data/raw/reviews.csv` | Entrada: `review_id`, `rating` (1–5), `review_text`. No se modifica. |
+| `data/processed/reviews_with_sentiment.csv` | Salida: columnas originales + `predicted_stars`, `sentiment`, `model_label`, `model_score`. |
+| `requirements.txt` | Dependencias con versiones fijadas (PyTorch solo CPU). |
+
+## Instalación
+
+Requisitos: **Python 3.13** (la versión del devcontainer, con la que se ha probado) y unos 2 GB de disco para dependencias y modelo.
+
+```bash
+python -m venv .venv
+# Windows (PowerShell):   .venv\Scripts\Activate.ps1
+# Windows (Git Bash):     source .venv/Scripts/activate
+# Linux / macOS:          source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+`requirements.txt` añade el índice `https://download.pytorch.org/whl/cpu` para instalar PyTorch **solo CPU** y evitar la versión CUDA, de ~2 GB, en Linux/Codespaces. No hace falta GPU.
+
+## Ejecución
+
+Todos los comandos se ejecutan desde la raíz del repositorio y con el entorno activado.
+
+```bash
+# 1. Script de producción -> data/processed/reviews_with_sentiment.csv
+python src/app.py
+
+# 2. Notebook de análisis (re-ejecuta todas las celdas y guarda los outputs)
+jupyter nbconvert --to notebook --execute --inplace src/explore.ipynb
+
+# 3. Tests
+python -m pytest tests
+```
+
+El notebook también se puede abrir en VS Code o Jupyter seleccionando el kernel del `.venv`. Su anexo final comprueba que sus predicciones coinciden con el CSV generado por `app.py`, así que conviene ejecutar antes el script.
+
+`app.py` devuelve el código de salida `0` si todo va bien, `1` si hay un error en los datos de entrada (archivo inexistente o vacío, columnas ausentes, rating fuera de 1–5, `review_id` duplicado) y `2` si falla la carga del modelo o la inferencia. Las reseñas con texto vacío se conservan en la salida, con las columnas de predicción vacías.
+
+## Modelo y clasificación
+
+- Modelo: [`nlptown/bert-base-multilingual-uncased-sentiment`](https://huggingface.co/nlptown/bert-base-multilingual-uncased-sentiment) (BERT multilingüe, licencia MIT), revisión fijada en el commit `8f6f4e3a8f70be4b65d3a4a8762b6d781cda240d`. Predice de 1 a 5 estrellas.
+- Bandas de sentimiento: **1–2 ★ → Negativo · 3 ★ → Neutral · 4–5 ★ → Positivo**.
+- `model_score` es la probabilidad *softmax* de la clase elegida. **No** es una probabilidad calibrada de acierto.
+
+### Descarga y caché del modelo
+
+En la primera ejecución, `transformers` descarga los pesos (~670 MB) a la caché de Hugging Face (`~/.cache/huggingface`; en Windows, `C:\Users\<usuario>\.cache\huggingface`). Las ejecuciones siguientes la reutilizan, y con la caché ya llena funciona sin conexión (`HF_HUB_OFFLINE=1`). Los pesos **no** se guardan en el repositorio (`.gitignore` excluye `*.safetensors`, `*.bin`, `*.pt`…). Para usar otra carpeta, define `HF_HOME`. En Windows puede aparecer un aviso sobre enlaces simbólicos en la caché: es inofensivo.
+
+## Limitaciones conocidas
+
+- **Sentimiento ≠ rating.** El rating es lo que el cliente puntuó y el sentimiento es el tono que el modelo detecta en el texto. Pueden diferir legítimamente: una reseña de 5 ★ puede mencionar una queja. Ninguno de los dos es «la verdad» del otro.
+- **Desajuste de dominio.** El modelo se ajustó con reseñas de productos y aquí se aplica a reseñas de un servicio. Falla de forma sistemática con frases de hostelería como *«Every dish was bursting with flavor»* o *«accommodate my allergy»*, a las que da 1 estrella aunque sean elogios. Que la causa sea el dominio de entrenamiento es una hipótesis.
+- **Dataset plantillado.** Las reseñas combinan solo 69 frases distintas, así que cada error se repite muchas veces. Los resultados no se pueden extrapolar sin más a reseñas reales.
+- **Validación limitada.** La revisión manual (18 reseñas de control y 16 discordancias) la hizo el analista que construyó el notebook. No es una evaluación formal sobre un conjunto etiquetado de forma independiente.
+- El modelo alternativo del addendum (`tabularisai/multilingual-sentiment-analysis`) tiene licencia **CC BY-NC 4.0 (no comercial)** y solo se usa para comparar.
+
+---
+
+## Template notes (original 4Geeks boilerplate)
 
 This boilerplate is designed to kickstart data science projects by providing a basic setup for database connections, data processing, and machine learning model development. It includes a structured folder organization for your datasets and a set of pre-defined Python packages necessary for most data science tasks.
 

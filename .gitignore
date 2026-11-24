@@ -1,3 +1,22 @@
 __pycache__
 .env
 .learn
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter / test temporaries
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Hugging Face / PyTorch caches and downloaded weights (never version model files)
+.cache/
+hf_cache/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx

@@ -1,9 +1,12 @@
+# CPU-only PyTorch wheels (avoids pulling the ~2 GB CUDA build on Linux/Codespaces).
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 ipyleaflet>=0.14.0
 ipywidgets>=7.7.1
-matplotlib>=3.7.0
-numpy>=1.24.2
+matplotlib==3.11.2
+numpy==2.5.5
 opencv-python>=4.1.2
-pandas>=2.3.3
+pandas==3.1.1
 psycopg2-binary>=2.9.3
 pymysql>=1.0.2
 python-dotenv>=0.20.0
@@ -13,3 +16,12 @@ seaborn>=0.12.2
 sqlalchemy>=2.0.38
 sympy>=1.10.1
 xgboost
+
+# Sentiment analysis (WeLoveReviews) — tested with Python 3.13
+torch==2.15.0
+transformers==5.24.1
+
+# Notebook execution and tests
+ipykernel==7.4.0
+nbconvert==7.17.2
+pytest==9.2.0
